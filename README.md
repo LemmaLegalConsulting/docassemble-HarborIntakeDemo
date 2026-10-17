@@ -2,6 +2,10 @@
 
 A fictional legal aid intake built with docassemble by Lemma Legal Consulting. Harbor pairs a warm paper, navy, teal, and brass identity with a working intake flow and an entirely offline LegalServer handoff simulation.
 
+[Screenshot gallery and blog notes](https://gist.github.com/nonprofittechy/1bc423562cf3c299a53a51011bb73ef9) · [Local demo](http://localhost/interview?i=docassemble.HarborIntakeDemo:data/questions/intake.yml)
+
+![Harbor welcome screen](docs/screenshots/01-welcome-desktop.png)
+
 ## Run it
 
 Install this repository through docassemble's package manager, then open:
