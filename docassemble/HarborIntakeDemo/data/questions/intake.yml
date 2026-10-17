@@ -1,0 +1,270 @@
+---
+metadata:
+  title: Harbor | A clearer path to legal help
+  short title: Harbor
+  description: A fictional legal aid intake demonstrating docassemble and an offline LegalServer handoff.
+---
+modules:
+  - .handoff
+---
+features:
+  css: harbor.css
+  navigation: True
+  progress bar: True
+  progress bar method: manual
+  question back button: True
+  hide standard menu: True
+---
+sections:
+  - start: Welcome
+  - about: About you
+  - needs: Your situation
+  - household: Household
+  - review: Review & send
+---
+mandatory: True
+code: |
+  nav.set_section('start')
+  set_progress(0)
+  welcome
+  nav.set_section('about')
+  set_progress(15)
+  first_name
+  contact_method
+  nav.set_section('needs')
+  set_progress(35)
+  problem_type
+  if problem_type == 'Housing':
+    housing_issue
+  problem_details
+  has_deadline
+  if has_deadline:
+    deadline_date
+  nav.set_section('household')
+  set_progress(60)
+  household_size
+  wants_upload
+  if wants_upload:
+    supporting_documents
+  nav.set_section('review')
+  set_progress(80)
+  review_complete
+  simulation_consent
+  receipt = simulate_handoff(build_payload(first=first_name, last=last_name, email=showifdef('email_address'), phone=showifdef('phone_number'), contact_method=contact_method, safe_contact=safe_contact, language=preferred_language, problem=problem_type, details=problem_details, housing_issue=showifdef('housing_issue'), deadline=str(deadline_date) if has_deadline else None, household_size=household_size, monthly_income=monthly_income, documents=[{'filename': f.filename, 'transfer': 'metadata only; file stays in docassemble'} for f in supporting_documents] if wants_upload else []), simulation_consent)
+  payload_file.initialize(filename='harbor-intake-payload.json')
+  payload_file.write(pretty_json(receipt))
+  payload_file.commit()
+  set_progress(100)
+  complete
+---
+objects:
+  - payload_file: DAFile
+---
+id: welcome
+question: |
+  A clearer path to<br>legal help.
+subquestion: |
+  <div class="harbor-eyebrow">HARBOR LEGAL AID · INTERACTIVE DEMO</div>
+  <p class="harbor-lead">A few questions. A fuller picture.<br>One thoughtful first step.</p>
+  <div class="harbor-grid">
+    <div class="harbor-tile"><span>01</span><strong>Tell your story</strong><p>Questions that adapt to your situation.</p></div>
+    <div class="harbor-tile"><span>02</span><strong>Make it yours</strong><p>Choose how you want to be contacted.</p></div>
+    <div class="harbor-tile"><span>03</span><strong>See the handoff</strong><p>Review your answers and simulate sending them.</p></div>
+  </div>
+  <div class="harbor-note"><strong>A demonstration, with room to explore.</strong><br>Harbor is a fictional organization. Use made-up information. Answers and uploads are stored on this docassemble server; nothing is sent to LegalServer and no legal services are requested.</div>
+  <p class="harbor-meta">ABOUT 5 MINUTES &nbsp; / &nbsp; BUILT BY LEMMA LEGAL CONSULTING</p>
+continue button field: welcome
+continue button label: Let's get started
+---
+id: your-name
+question: What should we call you?
+subquestion: |
+  <div class="harbor-eyebrow">01 / ABOUT YOU</div>
+  Start with a made-up name for this demonstration.
+fields:
+  - First name: first_name
+  - Last name: last_name
+  - Preferred language: preferred_language
+    choices:
+      - English
+      - Spanish
+      - Another language
+    help: This records an interpreter preference. This demo's questions are in English.
+---
+id: contact
+question: Let's stay in touch, your way.
+subquestion: We ask only for the contact information you choose to share.
+fields:
+  - How would you prefer to be contacted?: contact_method
+    datatype: radio
+    choices:
+      - Email
+      - Phone
+      - Do not contact me
+  - Email address: email_address
+    datatype: email
+    show if:
+      variable: contact_method
+      is: Email
+  - Phone number: phone_number
+    show if:
+      variable: contact_method
+      is: Phone
+  - What should we know about contacting you safely?: safe_contact
+    datatype: area
+    required: False
+    hint: For example, leave a message only after 5 p.m.
+---
+id: problem-type
+question: What brings you here today?
+subquestion: |
+  <div class="harbor-eyebrow">02 / YOUR SITUATION</div>
+  Choose the closest match. Your answer shapes the questions that follow.
+fields:
+  - I need help with: problem_type
+    datatype: radio
+    choices:
+      - Housing
+      - Family
+      - Debt or consumer issues
+      - Something else
+---
+id: housing
+question: Tell us about your housing concern.
+subquestion: This follow-up appears because you chose housing.
+fields:
+  - What is happening?: housing_issue
+    datatype: radio
+    choices:
+      - I received an eviction notice
+      - My home needs repairs
+      - I have a rent or deposit dispute
+      - Another housing problem
+---
+id: story
+question: Your story matters.
+subquestion: |
+  You do not need legal terms. Tell us what happened and what you would like help with.
+fields:
+  - What would you like us to know?: problem_details
+    datatype: area
+    rows: 5
+---
+id: deadline-check
+question: Is there a date we should know about?
+subquestion: A hearing, a notice, or a response deadline can help an intake team prioritize review. This demo does not monitor dates or contact a lawyer.
+yesno: has_deadline
+---
+id: deadline
+question: What is the date?
+fields:
+  - Hearing or deadline date: deadline_date
+    datatype: date
+---
+id: household
+question: A little about your household.
+subquestion: |
+  <div class="harbor-eyebrow">03 / HOUSEHOLD</div>
+  Intake teams often use household information to assess program fit. This demo does not make an eligibility decision.
+fields:
+  - How many people are in your household, including you?: household_size
+    datatype: integer
+    min: 1
+    max: 30
+  - Total monthly household income before taxes: monthly_income
+    datatype: currency
+    min: 0
+    help: An estimate is fine for this demo. Include income for everyone in your household.
+---
+id: upload-check
+question: Have a document to add?
+subquestion: You can try uploading a fictional notice or letter. It stays on this server; the simulated handoff includes its filename only. You can also skip this step.
+yesno: wants_upload
+---
+id: upload
+question: Add your supporting documents.
+fields:
+  - Documents: supporting_documents
+    datatype: files
+---
+id: review
+question: Your story, ready for review.
+subquestion: |
+  <div class="harbor-eyebrow">04 / REVIEW & SEND</div>
+  Take a moment to check your answers. You can edit any section before continuing.
+review:
+  - Edit: first_name
+    button: |
+      **About you**<br>
+      ${ first_name } ${ last_name } · ${ preferred_language }
+  - Edit: contact_method
+    button: |
+      **Contact preferences**<br>
+      ${ contact_method } · ${ email_address if contact_method == 'Email' else phone_number if contact_method == 'Phone' else 'No contact requested' }<br>
+      ${ safe_contact }
+  - Edit: problem_type
+    button: |
+      **Your situation**<br>
+      ${ problem_type }
+  - Edit: housing_issue
+    show if: problem_type == 'Housing'
+    button: |
+      **Housing concern**<br>
+      ${ housing_issue }
+  - Edit: problem_details
+    button: |
+      **Your story**<br>
+      ${ problem_details }
+  - Edit: has_deadline
+    button: |
+      **Time-sensitive information**<br>
+      ${ str(deadline_date) if has_deadline else 'No date provided' }
+  - Edit: deadline_date
+    show if: has_deadline
+    button: |
+      **Change the date**<br>
+      ${ deadline_date }
+  - Edit: household_size
+    button: |
+      **Household**<br>
+      ${ household_size } people · ${ currency(monthly_income) } per month
+  - Edit: wants_upload
+    button: |
+      **Documents**<br>
+      ${ len(supporting_documents) if wants_upload else 0 } attached
+continue button field: review_complete
+continue button label: Continue to handoff
+---
+id: consent
+question: See how the handoff works.
+subquestion: |
+  <div class="harbor-flow"><span>Your answers</span><b>→</b><span>Structured data</span><b>→</b><span>Simulated receipt</span></div>
+  The next step maps your actual interview answers into a structured intake payload and runs an offline LegalServer adapter. It creates a demo reference and a downloadable JSON receipt.
+
+  **No network request is made.** A real integration would use your organization's LegalServer configuration and field mapping.
+fields:
+  - I authorize this offline simulation using the answers I entered.: simulation_consent
+    datatype: yesno
+validation code: |
+  if not simulation_consent:
+    validation_error('Please authorize the simulation to continue, or use Back to review your answers.')
+continue button label: Simulate LegalServer handoff
+---
+id: complete
+event: complete
+question: A thoughtful intake.<br>A clear next step.
+subquestion: |
+  <div class="harbor-eyebrow">DEMONSTRATION COMPLETE</div>
+  <div class="harbor-receipt"><span class="harbor-pill">SIMULATION ACCEPTED</span><h2>${ receipt['reference'] }</h2><p>Your answers became a structured intake record.<br>No information was sent to LegalServer.</p></div>
+  <div class="harbor-grid">
+    <div class="harbor-tile"><span>CLIENT</span><strong>${ first_name } ${ last_name }</strong><p>${ contact_method }</p></div>
+    <div class="harbor-tile"><span>ROUTING</span><strong>${ problem_type }</strong><p>${ receipt['payload']['matter']['priority'] }</p></div>
+    <div class="harbor-tile"><span>DESTINATION</span><strong>Offline adapter</strong><p>0 network requests</p></div>
+  </div>
+  ${ payload_file }
+
+  <details class="harbor-note"><summary>Explore the data behind the handoff</summary><pre>${ html_escape(pretty_json(receipt)) }</pre></details>
+
+  <p class="harbor-meta">FICTIONAL SERVICE. REAL INTERVIEW LOGIC. BUILT WITH DOCASSEMBLE.</p>
+buttons:
+  - Try another scenario: restart
